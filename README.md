@@ -17,7 +17,7 @@ For Peer Review Only.
 0. [Note](#note)
 
 ### Introduction
-    
+
 This repository provides the detailed code for the NeurIPS2021 submitted paper ["CMT: A Confident Mean Teacher for Multi-organ Segmentation on Few-organ Datasets "](https://arxiv.org/abs/xxxx). The code contains the core module, `lib.models.MultiOrganNet`,  a 3D-CNN for the implementation of the `student` model and `teacher` model,  which implements the proposed `Mixture Multi-Hypotheses Network` in the main text that simultaneously obtains an initial segmentation and its uncertainty estimates. 
 
 ![cmt](./pictures/pipeline.png)

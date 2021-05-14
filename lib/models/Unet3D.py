@@ -1,13 +1,37 @@
+#
+# Copyright 2021 xxx. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS-IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # /*
 #  * @Author: dorming 
 #  * @Date: 2021-01-12 15:59:33 
 #  * @Last Modified by:   dorming 
 #  * @Last Modified time: 2021-01-12 15:59:33 
 #  */
+
+
+import numpy as np
 import torch
+import torch.nn.functional as F
+from torch import nn, optim
+from torch.nn import functional as F
+from torchvision import datasets, transforms
+from torchvision.utils import save_image
 import torch.nn as nn
 from torchsummary import summary
 import sys
+
 # sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append("/home/zongdaoming/cv/multi-organ/multi-organ-ijcai/")
 from .BaseModelClass import BaseModel
@@ -115,6 +139,38 @@ class UNet3D(BaseModel):
             nn.Conv3d(feat_in, feat_out, kernel_size=3, stride=1, padding=1, bias=False),
             nn.InstanceNorm3d(feat_out),
             nn.LeakyReLU())
+
+    def sample_gumbel(shape, eps=1e-20):
+        U = torch.rand(shape)
+        if is_cuda:
+            U = U.cuda()
+        return -torch.log(-torch.log(U + eps) + eps)
+
+
+    def gumbel_softmax_sample(logits, temperature):
+        y = logits + sample_gumbel(logits.size())
+        return F.softmax(y / temperature, dim=-1)
+
+
+    def gumbel_softmax(logits, temperature, hard=False):
+        """
+        ST-gumple-softmax
+        input: [*, n_class]
+        return: flatten --> [*, n_class] an one-hot vector
+        """
+        y = gumbel_softmax_sample(logits, temperature)
+        if not hard:
+            return y.view(-1, latent_dim * categorical_dim)
+
+        shape = y.size()
+        _, ind = y.max(dim=-1)
+        y_hard = torch.zeros_like(y).view(-1, shape[-1])
+        y_hard.scatter_(1, ind.view(-1, 1), 1)
+        y_hard = y_hard.view(*shape)
+        # Set gradients w.r.t. y_hard gradients w.r.t. y
+        y_hard = (y_hard - y).detach() + y
+        return y_hard.view(-1, latent_dim * categorical_dim)
+        
 
     def forward(self, x):
         # Level 1 context pathway 

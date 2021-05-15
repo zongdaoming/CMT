@@ -48,7 +48,7 @@ Some common python packages such as Numpy, Pandas, etc.
 
 Follow official guidance to install [Pytorch][torch_link]. Install the other required packages by:
 
-```shell
+```sh
 pip install -r requirements.txt
 ```
 [simpleITK_link]:https://github.com/SimpleITK/SimpleITK
